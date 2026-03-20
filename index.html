@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>跟进对象配置</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    body {
+      font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+      font-size: 13px;
+      color: #303133;
+      background: #f0f2f5;
+      min-height: 100vh
+    }
+
+    /* 顶部浏览器Tab式导航 */
+    .top-nav {
+      height: 40px;
+      background: #e8eaf0;
+      border-bottom: 1px solid #d0d3da;
+      display: flex;
+      align-items: flex-end;
+      padding: 0 4px 0 8px;
+      gap: 2px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      overflow: hidden
+    }
+
+    .nav-tab {
+      height: 34px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 12px;
+      font-size: 13px;
+      color: #606266;
+      cursor: pointer;
+      background: #d5d8e0;
+      border-radius: 6px 6px 0 0;
+      white-space: nowrap;
+      gap: 8px;
+      border: 1px solid #c5c8d0;
+      border-bottom: none;
+      min-width: 80px;
+      max-width: 160px;
+      position: relative;
+      transition: background .15s
+    }
+
+    .nav-tab:hover {
+      background: #eef0f5;
+      color: #303133
+    }
+
+    .nav-tab.active {
+      background: #fff;
+      color: #303133;
+      font-weight: 500;
+      z-index: 2;
+      border-color: #d0d3da
+    }
+
+    .nav-tab .tab-close {
+      font-size: 14px;
+      color: #909399;
+      cursor: pointer;
+      line-height: 1;
+      padding: 1px 2px;
+      border-radius: 3px;
+      flex-shrink: 0
+    }
+
+    .nav-tab .tab-close:hover {
+      background: #c0c4cc;
+      color: #fff
+    }
+
+    .nav-tab .tab-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap
+    }
+
+    /* 子导航 */
+    .sub-nav {
+      display: flex;
+      align-items: center;
+      background: #fff;
+      border-bottom: 2px solid #e4e7ed;
+      padding: 0 16px
+    }
+
+    .sub-tab {
+      height: 40px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 14px;
+      font-size: 13px;
+      color: #606266;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+      gap: 6px;
+      margin-bottom: -2px
+    }
+
+    .sub-tab:hover {
+      color: #409eff
+    }
+
+    .sub-tab.active {
+      color: #409eff;
+      border-bottom-color: #409eff
+    }
+
+    .sub-tab .tab-close {
+      font-size: 13px;
+      color: #c0c4cc;
+      cursor: pointer;
+      line-height: 1
+    }
+
+    .sub-tab .tab-close:hover {
+      color: #909399
+    }
+
+    /* 主体 */
+    .main-wrap {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px
+    }
+
+    /* 搜索栏 */
+    .search-bar {
+      background: #fff;
+      border-radius: 4px;
+      padding: 14px 16px 10px;
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+      flex-wrap: wrap
+    }
+
+    .search-item {
+      display: flex;
+      flex-direction: column;
+      gap: 5px
+    }
+
+    .search-label {
+      font-size: 12px;
+      color: #606266
+    }
+
+    .search-input,
+    .search-select {
+      height: 32px;
+      width: 180px;
+      padding: 0 10px;
+      border: 1px solid #dcdfe6;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #606266;
+      outline: none;
+      transition: border-color .2s
+    }
+
+    .search-select {
+      padding-right: 28px;
+      background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23909399' d='M6 8L1 3h10z'/%3E%3C/svg%3E") no-repeat calc(100% - 8px) center;
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer
+    }
+
+    .search-input:focus,
+    .search-select:focus {
+      border-color: #409eff
+    }
+
+    .search-btns {
+      display: flex;
+      gap: 8px;
+      padding-bottom: 1px
+    }
+
+    /* 按钮 */
+    .btn {
+      height: 32px;
+      padding: 0 16px;
+      border-radius: 4px;
+      font-size: 13px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: .15s
+    }
+
+    .btn-primary {
+      background: #409eff;
+      color: #fff;
+      border-color: #409eff
+    }
+
+    .btn-primary:hover {
+      background: #66b1ff;
+      border-color: #66b1ff
+    }
+
+    .btn-default {
+      background: #fff;
+      color: #606266;
+      border-color: #dcdfe6
+    }
+
+    .btn-default:hover {
+      color: #409eff;
+      border-color: #c6e2ff;
+      background: #ecf5ff
+    }
+
+    .btn-text {
+      background: none;
+      border: none;
+      color: #409eff;
+      padding: 0 4px;
+      font-size: 13px;
+      cursor: pointer
+    }
+
+    .btn-text:hover {
+      color: #66b1ff
+    }
+
+    .btn-text-danger {
+      background: none;
+      border: none;
+      color: #f56c6c;
+      padding: 0 4px;
+      font-size: 13px;
+      cursor: pointer
+    }
+
+    .btn-text-danger:hover {
+      color: #f78989
+    }
+
+    /* 工具栏 */
+    .toolbar {
+      display: flex;
+      align-items: center
+    }
+
+    /* 表格 */
+    .table-wrap {
+      background: #fff;
+      border-radius: 4px;
+      overflow: hidden
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px
+    }
+
+    thead tr {
+      background: #f5f7fa
+    }
+
+    thead th {
+      padding: 10px 12px;
+      text-align: left;
+      font-weight: 600;
+      color: #606266;
+      border-bottom: 1px solid #e4e7ed;
+      white-space: nowrap
+    }
+
+    tbody tr {
+      transition: background .15s
+    }
+
+    tbody tr:hover {
+      background: #f5f7fa
+    }
+
+    tbody td {
+      padding: 10px 12px;
+      color: #606266;
+      border-bottom: 1px solid #f0f2f5;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 180px
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 12px
+    }
+
+    .status-ok {
+      background: #f0f9eb;
+      color: #67c23a
+    }
+
+    .status-unbound {
+      background: #f4f4f5;
+      color: #909399
+    }
+
+    .ops-cell {
+      display: flex;
+      gap: 4px;
+      align-items: center
+    }
+
+    .sep {
+      color: #e4e7ed
+    }
+
+    /* 分页 */
+    .pagination-wrap {
+      background: #fff;
+      border-radius: 4px;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px
+    }
+
+    .page-total {
+      margin-right: auto;
+      font-size: 13px;
+      color: #606266
+    }
+
+    .page-btn {
+      min-width: 28px;
+      height: 28px;
+      padding: 0 4px;
+      border: 1px solid #dcdfe6;
+      border-radius: 4px;
+      background: #fff;
+      font-size: 13px;
+      color: #606266;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: .15s
+    }
+
+    .page-btn:hover:not(:disabled) {
+      color: #409eff;
+      border-color: #409eff
+    }
+
+    .page-btn.active {
+      background: #409eff;
+      border-color: #409eff;
+      color: #fff
+    }
+
+    .page-btn:disabled {
+      color: #c0c4cc;
+      cursor: not-allowed
+    }
+
+    .page-ellipsis {
+      color: #909399;
+      padding: 0 4px
+    }
+
+    .page-goto {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: #606266
+    }
+
+    .page-goto input {
+      width: 44px;
+      height: 28px;
+      text-align: center;
+      border: 1px solid #dcdfe6;
+      border-radius: 4px;
+      font-size: 13px;
+      outline: none
+    }
+
+    .page-goto input:focus {
+      border-color: #409eff
+    }
+
+    .page-size-select {
+      height: 28px;
+      padding: 0 22px 0 8px;
+      border: 1px solid #dcdfe6;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #606266;
+      background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath fill='%23909399' d='M6 8L1 3h10z'/%3E%3C/svg%3E") no-repeat calc(100% - 6px) center;
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+      outline: none
+    }
+
+    /* 居中弹窗 */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .45);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center
+    }
+
+    .modal-overlay.show {
+      display: flex
+    }
+
+    .modal-box {
+      background: #fff;
+      border-radius: 6px;
+      width: 960px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, .2);
+      animation: modalIn .2s ease
+    }
+
+    @keyframes modalIn {
+      from {
+        opacity: 0;
+        transform: scale(.96) translateY(-8px)
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0)
+      }
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 24px 14px;
+      flex-shrink: 0
+    }
+
+    .modal-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #303133
+    }
+
+    .modal-close {
+      font-size: 20px;
+      color: #909399;
+      cursor: pointer;
+      border: none;
+      background: none;
+      line-height: 1;
+      padding: 0
+    }
+
+    .modal-close:hover {
+      color: #303133
+    }
+
+    .modal-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 24px
+    }
+
+    .req {
+      color: #f56c6c;
+      margin-right: 2px
+    }
+
+    .modal-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid #dcdfe6;
+      font-size: 13px;
+    }
+    .modal-table th, .modal-table td {
+      border: 1px solid #dcdfe6;
+      text-align: center;
+      padding: 12px 10px;
+      vertical-align: middle;
+    }
+    .modal-table th {
+      background: #f0f2f5;
+      color: #303133;
+      font-weight: 600;
+    }
+    .modal-table .form-select, .modal-table .form-input {
+      width: 100%;
+      height: 32px;
+      margin: 0;
+      border: 1px solid #dcdfe6;
+      border-radius: 4px;
+      padding: 0 10px;
+      font-size: 13px;
+      outline: none;
+    }
+    .modal-table .form-select {
+      padding-right: 28px;
+      background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23909399' d='M6 8L1 3h10z'/%3E%3C/svg%3E") no-repeat calc(100% - 8px) center;
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+    }
+    .modal-table .form-input:focus, .modal-table .form-select:focus {
+      border-color: #409eff;
+    }
+
+    .modal-footer {
+      padding: 16px 24px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-shrink: 0
+    }
+
+    /* 删除确认 */
+    .confirm-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .4);
+      z-index: 3000;
+      align-items: center;
+      justify-content: center
+    }
+
+    .confirm-overlay.show {
+      display: flex
+    }
+
+    .confirm-box {
+      background: #fff;
+      border-radius: 6px;
+      width: 380px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, .15)
+    }
+
+    .confirm-hd {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 16px 20px 12px;
+      font-size: 15px;
+      font-weight: 600;
+      color: #303133
+    }
+
+    .confirm-icon {
+      font-size: 18px;
+      color: #e6a23c
+    }
+
+    .confirm-bd {
+      padding: 0 20px 20px;
+      font-size: 13px;
+      color: #606266
+    }
+
+    .confirm-ft {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 12px 20px;
+      border-top: 1px solid #f0f0f0
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #fff;
+      border: 1px solid #e4e7ed;
+      border-radius: 4px;
+      padding: 10px 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, .12);
+      font-size: 13px;
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      gap: 8px
+    }
+
+    .toast.show {
+      display: flex
+    }
+
+    .toast-ok {
+      color: #67c23a
+    }
+
+    .toast-err {
+      color: #f56c6c
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #c0c4cc;
+      border-radius: 3px
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- 顶部 Tab 式导航 -->
+  <div class="top-nav">
+    <div class="nav-tab"><span class="tab-name">站点签入统计</span><span class="tab-close">×</span></div>
+    <div class="nav-tab"><span class="tab-name">轨迹监控配置</span><span class="tab-close">×</span></div>
+    <div class="nav-tab"><span class="tab-name">内部员工管理</span><span class="tab-close">×</span></div>
+    <div class="nav-tab active"><span class="tab-name">基础配置</span><span class="tab-close">×</span></div>
+  </div>
+
+  <!-- 子导航 -->
+  <div class="sub-nav">
+    <div class="sub-tab">国家</div>
+    <div class="sub-tab">轨迹变量</div>
+    <div class="sub-tab">节点映射服务商</div>
+    <div class="sub-tab">原因配置</div>
+    <div class="sub-tab">异常监控</div>
+    <div class="sub-tab">时效计算配置</div>
+    <div class="sub-tab active">跟进对象配置<span class="tab-close" style="margin-left:6px">×</span></div>
+  </div>
+
+  <!-- 主体 -->
+  <div class="main-wrap">
+
+    <!-- 搜索栏 -->
+    <div class="search-bar">
+      <div class="search-item">
+        <span class="search-label">跟进对象</span>
+        <input class="search-input" id="searchPerson" type="text" placeholder="请输入" />
+      </div>
+      <div class="search-item">
+        <span class="search-label">所属国家</span>
+        <select class="search-select" id="searchCountry">
+          <option value="">全部</option>
+          <option value="法国">法国</option>
+          <option value="意大利">意大利</option>
+          <option value="荷兰">荷兰</option>
+        </select>
+      </div>
+      <div class="search-btns">
+        <button class="btn btn-primary" onclick="doSearch()">查询</button>
+        <button class="btn btn-default" onclick="doReset()">重置</button>
+      </div>
+    </div>
+
+    <!-- 工具栏 -->
+    <div class="toolbar">
+      <button class="btn btn-primary" onclick="openModal('add')">+ 新增</button>
+    </div>
+
+    <!-- 表格 -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:48px">序号</th>
+            <th>跟进对象</th>
+            <th>所属国家</th>
+            <th>系统id</th>
+            <th>飞书ID</th>
+            <th>邮箱</th>
+            <th>绑定操作人</th>
+            <th>最后绑定时间</th>
+            <th>状态</th>
+            <th style="width:100px">操作</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- 分页 -->
+    <div class="pagination-wrap">
+      <span class="page-total" id="pageTotal">共 0 条记录</span>
+      <button class="page-btn" id="btnFirst" onclick="goPage(1)">«</button>
+      <button class="page-btn" id="btnPrev" onclick="goPage(currentPage-1)">‹</button>
+      <span id="pageNumbers"></span>
+      <button class="page-btn" id="btnNext" onclick="goPage(currentPage+1)">›</button>
+      <button class="page-btn" id="btnLast" onclick="goPage(totalPages)">»</button>
+      <span class="page-goto">到 <input id="gotoInput" type="number" min="1"
+          onkeydown="if(event.key==='Enter')gotoPage()" /> 页</span>
+      <select class="page-size-select" id="pageSizeSelect" onchange="changePageSize(this.value)">
+        <option value="10">10条/页</option>
+        <option value="20">20条/页</option>
+        <option value="50">50条/页</option>
+      </select>
+    </div>
+
+  </div>
+
+  <!-- 居中弹窗：新增/编辑 -->
+  <div class="modal-overlay" id="formModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title" id="modalTitle">新增</span>
+        <button class="modal-close" onclick="closeModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <table class="modal-table">
+          <thead>
+            <tr>
+              <th style="width:140px"><span class="req">*</span>所属国家</th>
+              <th style="width:200px"><span class="req">*</span>跟进对象系统账号</th>
+              <th style="width:120px">操作</th>
+              <th style="width:220px"><span class="req">*</span>飞书id</th>
+              <th>邮箱地址</th>
+            </tr>
+          </thead>
+          <tbody id="modalTbody">
+            <!-- Dynamic generated rows -->
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-default" onclick="closeModal()">取消</button>
+        <button class="btn btn-primary" onclick="submitForm()">确认</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 删除确认 -->
+  <div class="confirm-overlay" id="confirmOverlay">
+    <div class="confirm-box">
+      <div class="confirm-hd"><span class="confirm-icon">⚠</span>提示</div>
+      <div class="confirm-bd">确定要删除该跟进对象的飞书绑定信息吗？</div>
+      <div class="confirm-ft">
+        <button class="btn btn-default" onclick="closeConfirm()">取消</button>
+        <button class="btn btn-primary" style="background:#f56c6c;border-color:#f56c6c"
+          onclick="doDelete()">确定删除</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <span id="toastIcon"></span>
+    <span id="toastMsg"></span>
+  </div>
+
+  <script>
+    const employeePool = [
+      { name: '王明', status: '在职', org: '运营中心', dept: '运营部', position: '运营专员', phone: '138****0011' },
+      { name: '李芳', status: '在职', org: '客服中心', dept: '客服部', position: '客服主管', phone: '139****0022' },
+      { name: '张伟', status: '在职', org: '仓储中心', dept: '仓储部', position: '仓储主管', phone: '136****0033' },
+      { name: '刘洋', status: '在职', org: '运输中心', dept: '运输部', position: '调度专员', phone: '137****0044' },
+      { name: '陈静', status: '在职', org: '质检中心', dept: '质检部', position: '质检员', phone: '135****0055' },
+      { name: '赵磊', status: '在职', org: '信息技术部', dept: '研发部', position: '后端工程师', phone: '131****0066' },
+      { name: '孙红', status: '在职', org: '运营中心', dept: '数据部', position: '数据分析师', phone: '133****0077' },
+      { name: '周成', status: '在职', org: '客服中心', dept: '投诉部', position: '投诉处理员', phone: '132****0088' },
+      { name: '吴浩', status: '在职', org: '运输中心', dept: '配送部', position: '配送主管', phone: '130****0099' },
+      { name: '郑雪', status: '离职', org: '仓储中心', dept: '分拣部', position: '分拣员', phone: '159****0110' },
+      { name: '钱进', status: '在职', org: '运营中心', dept: '运营部', position: '高级运营', phone: '158****0121' },
+      { name: '冯琳', status: '在职', org: '质检中心', dept: '质检部', position: '质检主管', phone: '157****0132' },
+      { name: '蒋晶', status: '在职', org: '信息技术部', dept: '产品部', position: '产品经理', phone: '156****0143' },
+      { name: '韩飞', status: '在职', org: '运输中心', dept: '运输部', position: '司机', phone: '155****0154' },
+      { name: '秦乐', status: '在职', org: '客服中心', dept: '客服部', position: '客服专员', phone: '154****0165' },
+      { name: '杨帆', status: '在职', org: '运营中心', dept: '市场部', position: '市场专员', phone: '153****0176' },
+      { name: '许明', status: '在职', org: '仓储中心', dept: '仓储部', position: '理货员', phone: '152****0187' },
+      { name: '何峰', status: '在职', org: '运输中心', dept: '配送部', position: '配送员', phone: '151****0198' },
+      { name: '曹阳', status: '在职', org: '质检中心', dept: '质检部', position: '质检员', phone: '150****0209' },
+      { name: '谢宇', status: '在职', org: '信息技术部', dept: '研发部', position: '前端工程师', phone: '149****0210' },
+      { name: '邓慧', status: '在职', org: '客服中心', dept: '客服部', position: '客服经理', phone: '148****0221' },
+      { name: '程丹', status: '在职', org: '运营中心', dept: '运营部', position: '运营总监', phone: '147****0232' },
+      { name: '彭力', status: '在职', org: '运输中心', dept: '运输部', position: '运输经理', phone: '146****0243' },
+      { name: '萧远', status: '在职', org: '仓储中心', dept: '仓储部', position: '仓储总监', phone: '145****0254' },
+    ];
+
+    let allRecords = [];
+    let nextId = 1;
+    let currentPage = 1, pageSize = 10, totalPages = 1;
+    let filteredRecords = [];
+    let modalMode = 'add', editingId = null, deletingId = null;
+
+    function init() {
+      const sel = document.getElementById('fPerson');
+      employeePool.forEach(e => {
+        const o = document.createElement('option');
+        o.value = e.name;
+        o.textContent = e.name + '（' + e.org + '）';
+        sel.appendChild(o);
+      });
+      doSearch();
+    }
+
+    function doSearch() {
+      const kw = document.getElementById('searchPerson').value.trim().toLowerCase();
+      const country = document.getElementById('searchCountry').value;
+      filteredRecords = allRecords.filter(r =>
+        (!kw || r.details.some(d => d.person.toLowerCase().includes(kw))) &&
+        (!country || r.details.some(d => d.country === country))
+      );
+      currentPage = 1; renderTable(); renderPagination();
+    }
+
+    function doReset() {
+      document.getElementById('searchPerson').value = '';
+      document.getElementById('searchCountry').value = '';
+      doSearch();
+    }
+
+    function maskStr(s, a, b) {
+      if (!s || s.length <= a + b) return s;
+      return s.slice(0, a) + '***' + s.slice(-b);
+    }
+    function maskEmail(e) {
+      const i = e.indexOf('@');
+      if (i < 0) return e;
+      const l = e.slice(0, i);
+      return (l.length <= 3 ? l[0] : l.slice(0, 3)) + '***' + e.slice(i);
+    }
+
+    function renderTable() {
+      const start = (currentPage - 1) * pageSize;
+      const rows = filteredRecords.slice(start, start + pageSize);
+      const tb = document.getElementById('tableBody');
+      if (!rows.length) {
+        tb.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#909399;padding:40px 0">暂无数据</td></tr>';
+        return;
+      }
+      tb.innerHTML = rows.map((r, i) => `
+    <tr>
+      <td style="text-align:center">${start + i + 1}</td>
+      <td>${r.details.map(d => d.person).join(', ')}</td>
+      <td>${r.details.map(d => d.country).join(', ') || '—'}</td>
+      <td style="font-family:monospace;color:#606266">${r.systemId ? maskStr(r.systemId, 3, 3) : '—'}</td>
+      <td style="font-family:monospace">${r.feishuId ? maskStr(r.feishuId, 4, 4) : '—'}</td>
+      <td>${r.email ? maskEmail(r.email) : '—'}</td>
+      <td>${r.operator || '—'}</td>
+      <td style="color:#909399">${r.bindTime || '—'}</td>
+      <td><span class="status-badge ${r.bindStatus === '正常' ? 'status-ok' : 'status-unbound'}">● ${r.bindStatus}</span></td>
+      <td><div class="ops-cell">
+        <button class="btn-text" onclick="openModal('edit',${r.id})">编辑</button>
+        <span class="sep">|</span>
+        <button class="btn-text-danger" onclick="confirmDelete(${r.id})">删除</button>
+      </div></td>
+    </tr>`).join('');
+    }
+
+    function renderPagination() {
+      totalPages = Math.ceil(filteredRecords.length / pageSize) || 1;
+      document.getElementById('pageTotal').textContent = '共 ' + filteredRecords.length + ' 条记录';
+      const p = currentPage, t = totalPages;
+      let pages = t <= 7 ? Array.from({ length: t }, (_, i) => i + 1) : (() => {
+        let a = [1]; if (p > 4) a.push('...');
+        for (let i = Math.max(2, p - 2); i <= Math.min(t - 1, p + 2); i++)a.push(i);
+        if (p < t - 3) a.push('...'); a.push(t); return a;
+      })();
+      document.getElementById('pageNumbers').innerHTML = pages.map(pg =>
+        pg === '...' ? '<span class="page-ellipsis">...</span>' :
+          `<button class="page-btn${pg === p ? ' active' : ''}" onclick="goPage(${pg})">${pg}</button>`
+      ).join('');
+      document.getElementById('btnFirst').disabled = p <= 1;
+      document.getElementById('btnPrev').disabled = p <= 1;
+      document.getElementById('btnNext').disabled = p >= t;
+      document.getElementById('btnLast').disabled = p >= t;
+    }
+
+    function goPage(n) { if (n < 1 || n > totalPages) return; currentPage = n; renderTable(); renderPagination(); }
+    function gotoPage() { const v = parseInt(document.getElementById('gotoInput').value); if (!isNaN(v)) goPage(v); }
+    function changePageSize(v) { pageSize = parseInt(v); currentPage = 1; renderTable(); renderPagination(); }
+
+    let modalRows = [];
+    let tempFeishuId = '';
+    let tempEmail = '';
+
+    function renderModalTable() {
+      const tbody = document.getElementById('modalTbody');
+      let html = '';
+      modalRows.forEach((row, index) => {
+        html += '<tr>';
+        html += `<td>
+          <select class="form-select country-select" onchange="updateModalRow(${index}, 'country', this.value)">
+            <option value="">请选择</option>
+            <option value="法国" ${row.country === '法国' ? 'selected' : ''}>法国</option>
+            <option value="意大利" ${row.country === '意大利' ? 'selected' : ''}>意大利</option>
+            <option value="荷兰" ${row.country === '荷兰' ? 'selected' : ''}>荷兰</option>
+          </select>
+        </td>`;
+        html += `<td>
+          <select class="form-select" onchange="updateModalRow(${index}, 'person', this.value)">
+            <option value="">请选择</option>
+            ${employeePool.map(e => `<option value="${e.name}" ${row.person === e.name ? 'selected' : ''}>${e.name}（${e.org}）</option>`).join('')}
+          </select>
+        </td>`;
+        html += `<td>
+          <div class="ops-cell" style="justify-content:center">
+            <button class="btn-text" onclick="addModalRow()">新增</button>
+            <button class="btn-text" style="${modalRows.length > 1 ? 'color:#409eff' : 'color:#c0c4cc;cursor:not-allowed'}" onclick="delModalRow(${index})">删除</button>
+          </div>
+        </td>`;
+        
+        if (index === 0) {
+          html += `<td rowspan="${modalRows.length}">
+            <input class="form-input" id="mFeishuId" placeholder="请输入" value="${tempFeishuId}" onchange="tempFeishuId=this.value" onkeyup="tempFeishuId=this.value" />
+          </td>`;
+          html += `<td rowspan="${modalRows.length}">
+            <input class="form-input" id="mEmail" placeholder="请输入" value="${tempEmail}" onchange="tempEmail=this.value" onkeyup="tempEmail=this.value" />
+          </td>`;
+        }
+        html += '</tr>';
+      });
+      tbody.innerHTML = html;
+      updateCountryOptions();
+    }
+
+    function updateCountryOptions() {
+      const selects = document.querySelectorAll('.country-select');
+      const selected = modalRows.map(r => r.country).filter(Boolean);
+      selects.forEach((sel, idx) => {
+        const cur = modalRows[idx].country;
+        Array.from(sel.options).forEach(opt => {
+          if (opt.value) {
+            opt.disabled = selected.includes(opt.value) && opt.value !== cur;
+          }
+        });
+      });
+    }
+
+    function updateModalRow(index, field, value) {
+      modalRows[index][field] = value;
+      if (field === 'country') updateCountryOptions();
+    }
+
+    function addModalRow() {
+      if (modalRows.length >= 3) {
+        showToast('err', '可选国家只有3个，已达到上限');
+        return;
+      }
+      modalRows.push({ id: Date.now(), country: '', person: '' });
+      renderModalTable();
+    }
+
+    function delModalRow(index) {
+      if (modalRows.length <= 1) return;
+      modalRows.splice(index, 1);
+      renderModalTable();
+    }
+
+    function openModal(mode, id) {
+      modalMode = mode; editingId = id || null;
+      tempFeishuId = '';
+      tempEmail = '';
+
+      if (mode === 'edit' && id) {
+        document.getElementById('modalTitle').textContent = '编辑';
+        const r = allRecords.find(x => x.id === id);
+        if (r) {
+          modalRows = r.details.map((d, i) => ({ id: Date.now() + i, country: d.country, person: d.person }));
+          tempFeishuId = r.feishuId || '';
+          tempEmail = r.email || '';
+        }
+      } else {
+        document.getElementById('modalTitle').textContent = '新增';
+        modalRows = [{ id: Date.now(), country: '', person: '' }];
+      }
+      
+      renderModalTable();
+      document.getElementById('formModal').classList.add('show');
+    }
+
+    function closeModal() { document.getElementById('formModal').classList.remove('show'); }
+
+    function getNow() {
+      const d = new Date(), p = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+    }
+
+    function submitForm() {
+      const feishuId = tempFeishuId.trim();
+      const email = tempEmail.trim();
+
+      if (!feishuId) { showToast('err', '请输入飞书id'); return; }
+
+      const addedCountries = new Set();
+      for (let i = 0; i < modalRows.length; i++) {
+        const row = modalRows[i];
+        if (!row.country) { showToast('err', `第${i + 1}行：请选择所属国家`); return; }
+        if (!row.person) { showToast('err', `第${i + 1}行：请选择跟进对象`); return; }
+        if (addedCountries.has(row.country)) {
+          showToast('err', `第${i + 1}行：不能重复选择国家 ${row.country}`); return;
+        }
+        addedCountries.add(row.country);
+        if (modalMode === 'add' && allRecords.some(r => r.details.some(d => d.person === row.person))) {
+          showToast('err', `跟进对象 ${row.person} 已配置`); return;
+        }
+      }
+
+      if (modalMode === 'add') {
+        allRecords.push({
+          id: nextId++,
+          details: modalRows.map(row => ({ country: row.country, person: row.person })),
+          systemId: 'SYS' + String(nextId).padStart(6, '0'),
+          feishuId, email, operator: '当前用户', bindTime: getNow(), bindStatus: '正常'
+        });
+        showToast('ok', '新增成功');
+      } else {
+        const r = allRecords.find(x => x.id === editingId);
+        if (r) {
+          if (modalMode === 'edit') {
+            for (const row of modalRows) {
+              const existing = allRecords.find(x => x.id !== editingId && x.details.some(d => d.person === row.person));
+              if (existing) { showToast('err', `跟进对象 ${row.person} 已配置`); return; }
+            }
+          }
+          r.details = modalRows.map(row => ({ country: row.country, person: row.person }));
+          r.feishuId = feishuId;
+          r.email = email;
+          r.operator = '当前用户';
+          r.bindTime = getNow();
+        }
+        showToast('ok', '编辑成功');
+      }
+      closeModal(); doSearch();
+    }
+
+    function confirmDelete(id) { deletingId = id; document.getElementById('confirmOverlay').classList.add('show'); }
+    function closeConfirm() { deletingId = null; document.getElementById('confirmOverlay').classList.remove('show'); }
+    function doDelete() {
+      if (deletingId !== null) {
+        const r = allRecords.find(x => x.id === deletingId);
+        if (r) { r.feishuId = ''; r.email = ''; r.operator = ''; r.bindTime = ''; r.bindStatus = '未绑定'; }
+        showToast('ok', '删除成功'); closeConfirm(); doSearch();
+      }
+    }
+
+    function showToast(type, msg) {
+      const t = document.getElementById('toast');
+      document.getElementById('toastIcon').textContent = type === 'ok' ? '✓' : '✗';
+      document.getElementById('toastIcon').className = type === 'ok' ? 'toast-ok' : 'toast-err';
+      document.getElementById('toastMsg').textContent = msg;
+      t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000);
+    }
+
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeConfirm(); } });
+
+    init();
+  </script>
+</body>
+
+</html>
