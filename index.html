@@ -643,6 +643,24 @@
       background: #f1f1f1
     }
 
+    /* 自定义级联组件 */
+    .cascader-dropdown {
+      position: absolute; top: 100%; left: 0; margin-top: 4px;
+      background: #fff; border: 1px solid #e4e7ed; box-shadow: 0 2px 12px 0 rgba(0,0,0,.1);
+      border-radius: 4px; z-index: 1000; display: none;
+    }
+    .cascader-dropdown.show { display: flex; }
+    .cascader-col {
+      min-width: 120px; max-height: 200px; overflow-y: auto; padding: 6px 0;
+      list-style: none;
+    }
+    .cascader-item {
+      padding: 0 16px 0 12px; height: 34px; line-height: 34px;
+      display: flex; align-items: center; cursor: pointer; color: #606266; font-size: 13px;
+    }
+    .cascader-item:hover, .cascader-item.active { background: #f5f7fa; color: #409eff; }
+    .cascader-item .icon-right { margin-left: auto; color: #c0c4cc; font-size: 12px; }
+    .cascader-checkbox { margin-right: 8px; pointer-events: none; }
     ::-webkit-scrollbar-thumb {
       background: #c0c4cc;
       border-radius: 3px
@@ -676,18 +694,21 @@
 
     <!-- 搜索栏 -->
     <div class="search-bar">
-      <div class="search-item">
+      <div class="search-item" id="cascaderContainer">
         <span class="search-label">跟进对象</span>
-        <input class="search-input" id="searchPerson" type="text" placeholder="请输入" />
-      </div>
-      <div class="search-item">
-        <span class="search-label">所属国家</span>
-        <select class="search-select" id="searchCountry">
-          <option value="">全部</option>
-          <option value="法国">法国</option>
-          <option value="意大利">意大利</option>
-          <option value="荷兰">荷兰</option>
-        </select>
+        <div style="position:relative;">
+          <input class="search-input" id="searchPersonInput" type="text" placeholder="请选择或输入" 
+            onclick="toggleCascader(true)" oninput="filterCascader(this.value)" autocomplete="off" style="width:240px; cursor:text;" />
+          
+          <!-- 级联选择面板 -->
+          <div class="cascader-dropdown" id="cascaderDropdown">
+             <div class="cascader-col cascader-countries" id="cascaderCountries"></div>
+             <div class="cascader-col" id="cascaderPersons" style="border-left: 1px solid #e4e7ed;"></div>
+          </div>
+          <!-- 模糊搜索面板 -->
+          <div class="cascader-dropdown" id="cascaderSearchList" style="flex-direction:column; max-height:200px; overflow-y:auto; width: 100%;">
+          </div>
+        </div>
       </div>
       <div class="search-btns">
         <button class="btn btn-primary" onclick="doSearch()">查询</button>
@@ -713,7 +734,6 @@
             <th>邮箱</th>
             <th>绑定操作人</th>
             <th>最后绑定时间</th>
-            <th>状态</th>
             <th style="width:100px">操作</th>
           </tr>
         </thead>
@@ -823,6 +843,136 @@
     let filteredRecords = [];
     let modalMode = 'add', editingId = null, deletingId = null;
 
+    let selectedPersons = new Set();
+    let activeCountry = '法国';
+    let cascaderOptions = { '法国': new Set(), '意大利': new Set(), '荷兰': new Set() };
+
+    function buildCascaderData() {
+      cascaderOptions = { '法国': new Set(), '意大利': new Set(), '荷兰': new Set() };
+      
+      // 预先放入部分系统人员
+      employeePool.slice(0, 8).forEach(e => cascaderOptions['法国'].add(e.name));
+      employeePool.slice(8, 16).forEach(e => cascaderOptions['意大利'].add(e.name));
+      employeePool.slice(16, 24).forEach(e => cascaderOptions['荷兰'].add(e.name));
+
+      // 提取系统中已配好的账号作为附加级联数据
+      allRecords.forEach(r => {
+        r.details.forEach(d => {
+          if (cascaderOptions[d.country]) cascaderOptions[d.country].add(d.person);
+        });
+      });
+      renderCascaderCountries();
+    }
+
+    function toggleCascader(show) {
+      const cd = document.getElementById('cascaderDropdown');
+      const sl = document.getElementById('cascaderSearchList');
+      if (show) {
+        buildCascaderData();
+        const kw = document.getElementById('searchPersonInput').value.trim();
+        if (kw) {
+          filterCascader(kw);
+        } else {
+          cd.classList.add('show');
+          sl.classList.remove('show');
+        }
+      } else {
+        cd.classList.remove('show');
+        sl.classList.remove('show');
+      }
+    }
+
+    // 点击外部区域关闭弹窗
+    document.addEventListener('click', e => {
+      if (!e.target.closest('#cascaderContainer')) toggleCascader(false);
+    });
+
+    function renderCascaderCountries() {
+      const col = document.getElementById('cascaderCountries');
+      col.innerHTML = Object.keys(cascaderOptions).map(c => `
+        <div class="cascader-item ${activeCountry === c ? 'active' : ''}" onclick="setActiveCountry(event, '${c}')">
+          <input type="checkbox" class="cascader-checkbox" ${isCountryAllSelected(c) ? 'checked' : ''} onclick="toggleCountrySelect(event, '${c}')" />
+          <span>${c}</span>
+          <span class="icon-right">></span>
+        </div>
+      `).join('');
+      renderCascaderPersons(activeCountry);
+    }
+
+    function isCountryAllSelected(c) {
+      const persons = Array.from(cascaderOptions[c]);
+      if (persons.length === 0) return false;
+      return persons.every(p => selectedPersons.has(p));
+    }
+
+    function setActiveCountry(e, c) {
+      if (e) e.stopPropagation();
+      activeCountry = c;
+      renderCascaderCountries();
+    }
+
+    function toggleCountrySelect(e, c) {
+      e.stopPropagation();
+      const persons = Array.from(cascaderOptions[c]);
+      if (isCountryAllSelected(c)) {
+        persons.forEach(p => selectedPersons.delete(p));
+      } else {
+        persons.forEach(p => selectedPersons.add(p));
+      }
+      renderCascaderCountries();
+      updateSearchInputDisplay();
+    }
+
+    function renderCascaderPersons(c) {
+      const col = document.getElementById('cascaderPersons');
+      if (!c) { col.innerHTML = ''; return; }
+      const persons = Array.from(cascaderOptions[c]);
+      col.innerHTML = persons.length ? persons.map(p => `
+        <div class="cascader-item" onclick="togglePersonSelect(event, '${p}')">
+          <input type="checkbox" class="cascader-checkbox" ${selectedPersons.has(p) ? 'checked' : ''} />
+          <span>${p}</span>
+        </div>
+      `).join('') : '<div style="padding:10px 16px;color:#c0c4cc;font-size:12px;">暂无账号</div>';
+    }
+
+    function togglePersonSelect(e, p) {
+      e.stopPropagation();
+      if (selectedPersons.has(p)) selectedPersons.delete(p);
+      else selectedPersons.add(p);
+      renderCascaderCountries();
+      updateSearchInputDisplay();
+    }
+
+    function updateSearchInputDisplay() {
+      document.getElementById('searchPersonInput').value = Array.from(selectedPersons).join(', ');
+      doSearch();
+    }
+
+    function filterCascader(kw) {
+      const cd = document.getElementById('cascaderDropdown');
+      const sl = document.getElementById('cascaderSearchList');
+      if (!kw) {
+        cd.classList.add('show');
+        sl.classList.remove('show');
+        return;
+      }
+      cd.classList.remove('show');
+      
+      let allP = new Set();
+      Object.keys(cascaderOptions).forEach(c => cascaderOptions[c].forEach(p => allP.add(p)));
+      const matched = Array.from(allP).filter(p => p.toLowerCase().includes(kw.toLowerCase()));
+      
+      sl.innerHTML = matched.length ? matched.map(p => `
+        <div class="cascader-item" onclick="togglePersonSelect(event, '${p}')">
+          <input type="checkbox" class="cascader-checkbox" ${selectedPersons.has(p) ? 'checked' : ''} />
+          <span>${p}</span>
+        </div>
+      `).join('') : '<div style="padding:10px 16px;color:#c0c4cc;font-size:12px;">无匹配结果</div>';
+      
+      sl.classList.add('show');
+      doSearch();
+    }
+
     function init() {
       const sel = document.getElementById('fPerson');
       employeePool.forEach(e => {
@@ -835,18 +985,20 @@
     }
 
     function doSearch() {
-      const kw = document.getElementById('searchPerson').value.trim().toLowerCase();
-      const country = document.getElementById('searchCountry').value;
-      filteredRecords = allRecords.filter(r =>
-        (!kw || r.details.some(d => d.person.toLowerCase().includes(kw))) &&
-        (!country || r.details.some(d => d.country === country))
-      );
+      const kw = document.getElementById('searchPersonInput').value.trim();
+      const terms = kw.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+      filteredRecords = allRecords.filter(r => {
+        if (!terms.length) return true;
+        // 任意勾选项命中均返回该记录（或者用户直接手打的内容）
+        return terms.some(t => r.details.some(d => d.person.toLowerCase().includes(t) || d.country.toLowerCase().includes(t)));
+      });
       currentPage = 1; renderTable(); renderPagination();
     }
 
     function doReset() {
-      document.getElementById('searchPerson').value = '';
-      document.getElementById('searchCountry').value = '';
+      selectedPersons.clear();
+      document.getElementById('searchPersonInput').value = '';
+      toggleCascader(false);
       doSearch();
     }
 
@@ -879,7 +1031,6 @@
       <td>${r.email ? maskEmail(r.email) : '—'}</td>
       <td>${r.operator || '—'}</td>
       <td style="color:#909399">${r.bindTime || '—'}</td>
-      <td><span class="status-badge ${r.bindStatus === '正常' ? 'status-ok' : 'status-unbound'}">● ${r.bindStatus}</span></td>
       <td><div class="ops-cell">
         <button class="btn-text" onclick="openModal('edit',${r.id})">编辑</button>
         <span class="sep">|</span>
